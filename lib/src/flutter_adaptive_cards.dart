@@ -69,6 +69,7 @@ class NetworkAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
   }
 }
 
+// ignore: must_be_immutable
 class AdaptiveCard extends StatefulWidget {
   AdaptiveCard({
     Key? key,

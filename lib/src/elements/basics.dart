@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../utils.dart';
 import 'actions.dart';
-import 'additional.dart';
 import 'base.dart';
 
 class AdaptiveCardElement extends StatefulWidget with AdaptiveElementWidgetMixin {

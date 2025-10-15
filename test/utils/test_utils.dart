@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-
-import '../../lib/flutter_adaptive_cards.dart';
+import 'package:flutter_adaptive_cards_plus/src/flutter_adaptive_cards.dart';
 
 class MyTestHttpOverrides extends HttpOverrides {}
 

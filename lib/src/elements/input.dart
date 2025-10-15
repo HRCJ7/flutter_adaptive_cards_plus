@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'additional.dart';
 import 'base.dart';
 
 /// ===== Separator / Tappable / Styler helpers =====
@@ -512,7 +510,9 @@ class _AdaptiveChoiceSetState extends State<AdaptiveChoiceSet>
         // RadioListTile still works; Flutter warns about new RadioGroup API on very new versions.
         return RadioListTile<String>(
           value: valueForTitle,
+          // ignore: deprecated_member_use
           onChanged: (v) => _select(v),
+          // ignore: deprecated_member_use
           groupValue:
           _selectedChoice.contains(valueForTitle) ? valueForTitle : null,
           title: Text(title),
