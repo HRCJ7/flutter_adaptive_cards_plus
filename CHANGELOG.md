@@ -1,3 +1,4 @@
-## [0.0.1] - TODO: Add release date.
-
-* TODO: Describe initial release.
+## 1.0.0 – Initial Release
+- Updated codebase for Flutter 3.35.2
+- Improved stability and structure
+- Modernized library under MIT License
