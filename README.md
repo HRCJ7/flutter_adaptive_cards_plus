@@ -1,3 +1,7 @@
+[![pub package](https://img.shields.io/pub/v/flutter_adaptive_cards_plus.svg)](https://pub.dev/packages/flutter_adaptive_cards_plus)
+[![](https://tokei.rs/b1/github/HRCJ7/flutter_adaptive_cards_plus?category=code)](https://github.com/HRCJ7/flutter_adaptive_cards_plus)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/HRCJ7/flutter_adaptive_cards_plus/blob/main/LICENSE)
+
 # Flutter Adaptive Cards Plus
 
 A Flutter library for rendering **Adaptive Cards**, updated and maintained to support the latest **Flutter SDK 3.35.2**.
