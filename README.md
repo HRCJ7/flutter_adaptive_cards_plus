@@ -27,9 +27,7 @@ Add the package to your `pubspec.yaml`:
 
 ```
 dependencies:
-  flutter_adaptive_cards_plus:
-    git:
-      url: https://github.com/HRCJ7/flutter_adaptive_cards_plus
+  flutter_adaptive_cards_plus: ^1.0.0
 ```
 
 Then run:
