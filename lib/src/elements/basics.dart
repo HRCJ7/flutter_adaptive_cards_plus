@@ -133,8 +133,9 @@ class AdaptiveCardElementState extends State<AdaptiveCardElement>
         children: <Widget>[
           Positioned.fill(
             child: Image.network(
-              backgroundImage!,
+              Uri.encodeFull(backgroundImage!),
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
             ),
           ),
           result,
@@ -193,10 +194,22 @@ class _AdaptiveTextBlockState extends State<AdaptiveTextBlock>
         child: MarkdownBody(
           data: text,
           styleSheet: loadMarkdownStyleSheet(),
-          onTapLink: (text, href, title) {
-            _launchURL(href);
+          onTapLink: (t, href, title) => _launchURL(href),
+
+          sizedImageBuilder: (MarkdownImageConfig config) {
+            final uri = config.uri;
+            final url = uri.toString();
+            if (url.isEmpty) return const SizedBox.shrink();
+
+            return Image.network(
+              Uri.encodeFull(url),
+              width: config.width,
+              height: config.height,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            );
           },
-        ),
+        )
       ),
     );
   }
@@ -553,9 +566,12 @@ class _AdaptiveImageState extends State<AdaptiveImage>
   @override
   Widget build(BuildContext context) {
     final String urlStr = url ?? '';
-    Widget image = Image(
-      image: NetworkImage(urlStr),
+    Widget image = Image.network(
+      Uri.encodeFull(urlStr),
       fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return const SizedBox.shrink();
+      },
     );
 
     if (isPerson) {
@@ -731,9 +747,18 @@ class _AdaptiveMediaState extends State<AdaptiveMedia>
       looping: true,
       autoInitialize: true,
       placeholder: Center(
-        child: postUrl != null && postUrl!.isNotEmpty
-            ? Image.network(postUrl!)
-            : const SizedBox.shrink(),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (postUrl != null && postUrl!.isNotEmpty)
+              Image.network(
+                Uri.encodeFull(postUrl!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            const Icon(Icons.play_circle_fill, size: 64),
+          ],
+        ),
       ),
       videoPlayerController: videoPlayerController,
     );

@@ -33,7 +33,11 @@ class _IconButtonActionState extends State<IconButtonAction>
     if (hasIcon) {
       return ElevatedButton.icon(
         onPressed: onTapped,
-        icon: Image.network(iconUrl!, height: 36.0),
+        icon: Image.network(
+          Uri.encodeFull(iconUrl!),
+          height: 36.0,
+          errorBuilder: (context, error, stackTrace) => const SizedBox(width: 0, height: 0),
+        ),
         label: Text(title),
       );
     }
