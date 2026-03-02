@@ -13,13 +13,61 @@ import 'registry.dart';
 import 'utils.dart';
 
 abstract class AdaptiveCardContentProvider {
-  AdaptiveCardContentProvider({required this.hostConfigPath});
+  AdaptiveCardContentProvider({
+    this.hostConfigPath,
+    this.hostConfig,
+  }) : assert(
+          hostConfigPath != null || hostConfig != null,
+          'Either hostConfigPath or hostConfig must be provided.',
+        );
 
-  final String hostConfigPath;
+  final String? hostConfigPath;
+  final Map<String, dynamic>? hostConfig;
 
   Future<Map<String, dynamic>> loadHostConfig() async {
-    final hostConfigString = await rootBundle.loadString(hostConfigPath);
-    return Map<String, dynamic>.from(json.decode(hostConfigString));
+    if (hostConfig != null) {
+      return Map<String, dynamic>.from(hostConfig!);
+    }
+
+    final path = hostConfigPath!;
+    if (path.startsWith('lib/')) {
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('Invalid Adaptive Card hostConfigPath.'),
+        ErrorDescription(
+          'hostConfigPath was set to "$path", which points inside lib/.',
+        ),
+        ErrorHint(
+          'Files under lib/ are not automatically available to rootBundle in release. '
+          'Move host config to app assets (for example "assets/host_config.json") '
+          'and register it in pubspec.yaml, or provide hostConfigMap instead.',
+        ),
+      ]);
+    }
+
+    try {
+      final hostConfigString = await rootBundle.loadString(path);
+      return Map<String, dynamic>.from(json.decode(hostConfigString));
+    } on FlutterError catch (error) {
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('Unable to load Adaptive Card host config asset.'),
+        ErrorDescription('Failed to load "$path" from rootBundle.'),
+        ErrorHint(
+          'Make sure the file is declared under flutter/assets in your app pubspec '
+          '(for example "assets/host_config.json") or pass hostConfigMap instead.',
+        ),
+        ErrorDescription('Original error: $error'),
+      ]);
+    } on FormatException catch (error) {
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('Invalid Adaptive Card host config JSON.'),
+        ErrorDescription('The host config loaded from "$path" is not valid JSON.'),
+        ErrorHint(
+          'Verify the JSON syntax and ensure it is a JSON object before passing it '
+          'as host config.',
+        ),
+        ErrorDescription('Original error: $error'),
+      ]);
+    }
   }
 
   Future<Map<String, dynamic>> loadAdaptiveCardContent();
@@ -28,8 +76,9 @@ abstract class AdaptiveCardContentProvider {
 class MemoryAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
   MemoryAdaptiveCardContentProvider({
     required this.content,
-    required String hostConfigPath,
-  }) : super(hostConfigPath: hostConfigPath);
+    String? hostConfigPath,
+    Map<String, dynamic>? hostConfig,
+  }) : super(hostConfigPath: hostConfigPath, hostConfig: hostConfig);
 
   final Map<String, dynamic> content;
 
@@ -42,8 +91,9 @@ class MemoryAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
 class AssetAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
   AssetAdaptiveCardContentProvider({
     required this.path,
-    required String hostConfigPath,
-  }) : super(hostConfigPath: hostConfigPath);
+    String? hostConfigPath,
+    Map<String, dynamic>? hostConfig,
+  }) : super(hostConfigPath: hostConfigPath, hostConfig: hostConfig);
 
   final String path;
 
@@ -57,8 +107,9 @@ class AssetAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
 class NetworkAdaptiveCardContentProvider extends AdaptiveCardContentProvider {
   NetworkAdaptiveCardContentProvider({
     required this.url,
-    required String hostConfigPath,
-  }) : super(hostConfigPath: hostConfigPath);
+    String? hostConfigPath,
+    Map<String, dynamic>? hostConfig,
+  }) : super(hostConfigPath: hostConfigPath, hostConfig: hostConfig);
 
   final String url;
 
@@ -90,15 +141,21 @@ class AdaptiveCard extends StatefulWidget {
     this.placeholder,
     CardRegistry? cardRegistry,
     required String url,
-    required String hostConfigPath,
+    String? hostConfigPath,
+    Map<String, dynamic>? hostConfigMap,
     this.onSubmit,
     this.onOpenUrl,
     this.showDebugJson = true,
     this.approximateDarkThemeColors = true,
     this.isAsync = true,
-  })  : adaptiveCardContentProvider = NetworkAdaptiveCardContentProvider(
+  })  : assert(
+          hostConfigPath != null || hostConfigMap != null,
+          'Either hostConfigPath or hostConfig must be provided.',
+        ),
+        adaptiveCardContentProvider = NetworkAdaptiveCardContentProvider(
     url: url,
     hostConfigPath: hostConfigPath,
+    hostConfig: hostConfigMap,
   ),
         map = null,
         hostConfig = null,
@@ -110,15 +167,21 @@ class AdaptiveCard extends StatefulWidget {
     this.placeholder,
     CardRegistry? cardRegistry,
     required String assetPath,
-    required String hostConfigPath,
+    String? hostConfigPath,
+    Map<String, dynamic>? hostConfigMap,
     this.onSubmit,
     this.onOpenUrl,
     this.showDebugJson = true,
     this.approximateDarkThemeColors = true,
     this.isAsync = true,
-  })  : adaptiveCardContentProvider = AssetAdaptiveCardContentProvider(
+  })  : assert(
+          hostConfigPath != null || hostConfigMap != null,
+          'Either hostConfigPath or hostConfig must be provided.',
+        ),
+        adaptiveCardContentProvider = AssetAdaptiveCardContentProvider(
     path: assetPath,
     hostConfigPath: hostConfigPath,
+    hostConfig: hostConfigMap,
   ),
         map = null,
         hostConfig = null,
@@ -130,15 +193,21 @@ class AdaptiveCard extends StatefulWidget {
     this.placeholder,
     CardRegistry? cardRegistry,
     required Map<String, dynamic> content,
-    required String hostConfigPath,
+    String? hostConfigPath,
+    Map<String, dynamic>? hostConfigMap,
     this.onSubmit,
     this.onOpenUrl,
     this.showDebugJson = true,
     this.approximateDarkThemeColors = true,
     this.isAsync = true,
-  })  : adaptiveCardContentProvider = MemoryAdaptiveCardContentProvider(
+  })  : assert(
+          hostConfigPath != null || hostConfigMap != null,
+          'Either hostConfigPath or hostConfig must be provided.',
+        ),
+        adaptiveCardContentProvider = MemoryAdaptiveCardContentProvider(
     content: content,
     hostConfigPath: hostConfigPath,
+    hostConfig: hostConfigMap,
   ),
         map = null,
         hostConfig = null,
@@ -171,21 +240,55 @@ class _AdaptiveCardState extends State<AdaptiveCard> {
   void Function(Map<String, dynamic> map)? onSubmit;
   void Function(String url)? onOpenUrl;
 
+  Object? _loadError;
+
   @override
   void initState() {
     super.initState();
     if (widget.isAsync) {
-      widget.adaptiveCardContentProvider!.loadHostConfig().then((hostConfigMap) {
-        if (!mounted) return;
-        setState(() => widget.hostConfig = hostConfigMap);
-      });
-      widget.adaptiveCardContentProvider!
-          .loadAdaptiveCardContent()
-          .then((adaptiveMap) {
-        if (!mounted) return;
-        setState(() => widget.map = adaptiveMap);
-      });
+      _loadAsyncSources();
     }
+  }
+
+  Future<void> _loadAsyncSources() async {
+    try {
+      final hostConfigMap =
+          await widget.adaptiveCardContentProvider!.loadHostConfig();
+      final adaptiveMap =
+          await widget.adaptiveCardContentProvider!.loadAdaptiveCardContent();
+
+      if (!mounted) return;
+      setState(() {
+        _loadError = null;
+        widget.hostConfig = hostConfigMap;
+        widget.map = adaptiveMap;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _loadError = error);
+    }
+  }
+
+  Widget _buildLoadError(BuildContext context, Object error) {
+    final defaultError = Container(
+      padding: const EdgeInsets.all(12),
+      color: Colors.red.withOpacity(0.06),
+      child: const Text(
+        'Adaptive card could not be loaded.',
+        style: TextStyle(color: Colors.redAccent),
+      ),
+    );
+
+    assert(() {
+      debugPrint('AdaptiveCard load error: $error');
+      return true;
+    }());
+
+    if (widget.placeholder != null) {
+      return widget.placeholder!;
+    }
+
+    return defaultError;
   }
 
   @override
@@ -198,6 +301,10 @@ class _AdaptiveCardState extends State<AdaptiveCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loadError != null) {
+      return _buildLoadError(context, _loadError!);
+    }
+
     if (widget.isAsync && (widget.hostConfig == null || widget.map == null)) {
       return widget.placeholder ?? const SizedBox();
     }
