@@ -61,6 +61,10 @@ Other constructors:
 * `AdaptiveCard.asset` → Load card from a local asset
 * `AdaptiveCard.memory` → Load from an in-memory JSON map
 
+You can provide host config either as an asset path (`hostConfigPath`) **or** as a decoded map (`hostConfigMap`).
+If you use `hostConfigPath`, point to a bundled asset path (for example `assets/host_config.json`) declared in your app `pubspec.yaml` — do not pass `lib/...`.
+Use `hostConfigMap` when your host config JSON lives in code and is not bundled as a Flutter asset.
+
 ---
 
 ## 🧪 Running Tests

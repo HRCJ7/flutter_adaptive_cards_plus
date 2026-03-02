@@ -665,10 +665,11 @@ class _AdaptiveImageSetState extends State<AdaptiveImageSet>
       adaptiveMap: adaptiveMap,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final fallbackWidth = MediaQuery.sizeOf(context).width;
           return Wrap(
             children: images
                 .map((img) => SizedBox(
-              width: calculateSize(constraints),
+              width: calculateSize(constraints, fallbackWidth),
               child: img,
             ))
                 .toList(),
@@ -678,16 +679,23 @@ class _AdaptiveImageSetState extends State<AdaptiveImageSet>
     );
   }
 
-  double calculateSize(BoxConstraints constraints) {
+  double calculateSize(BoxConstraints constraints, double fallbackWidth) {
+    final finiteFallbackWidth =
+        (fallbackWidth.isFinite && fallbackWidth > 0) ? fallbackWidth : 300.0;
+    final maxWidth =
+        (constraints.maxWidth.isFinite && constraints.maxWidth > 0)
+            ? constraints.maxWidth
+            : finiteFallbackWidth;
+
     if (maybeSize != null) return maybeSize!;
-    if (imageSize == "stretch") return constraints.maxWidth;
+    if (imageSize == "stretch") return maxWidth;
     final count = images.length;
     if (count >= 5) {
-      return constraints.maxWidth / 5;
+      return maxWidth / 5;
     } else if (count == 0) {
       return 0.0;
     } else {
-      return constraints.maxWidth / count;
+      return maxWidth / count;
     }
   }
 
@@ -776,7 +784,10 @@ class _AdaptiveMediaState extends State<AdaptiveMedia>
   Widget build(BuildContext context) {
     return SeparatorElement(
       adaptiveMap: adaptiveMap,
-      child: Chewie(controller: controller),
+      child: AspectRatio(
+        aspectRatio: controller.aspectRatio ?? (3 / 2),
+        child: Chewie(controller: controller),
+      ),
     );
   }
 }
